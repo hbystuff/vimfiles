@@ -1,0 +1,5 @@
+bundle/*
+.*~
+.netrwhist
+user.vim
+
