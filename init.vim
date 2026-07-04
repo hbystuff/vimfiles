@@ -384,6 +384,6 @@ endif
 " ============================================================================
 " INITIALIZATION RUNS
 " ============================================================================
-colorscheme codedark
+colorscheme base16-default-dark
 call ApplyUserFontProc()
 call SetIndentLLVM()
