@@ -5,13 +5,14 @@ if has('win32') || has('win64')
 endif
 
 set autochdir
+set fileformats=dos,unix
 
 " ============================================================================
 " PLUGINS (Vim-Plug handles nocompatible automatically)
 " ============================================================================
 call plug#begin('~/vimfiles/bundle')
 Plug 'antiagainst/vim-tablegen'
-Plug 'lambdalisue/fern.vim', { 'branch': 'main' }
+Plug 'preservim/nerdtree'
 Plug 'preservim/nerdcommenter'
 Plug 'tpope/tpope-vim-abolish'
 Plug 'beyondmarc/hlsl.vim'
@@ -23,22 +24,21 @@ Plug 'vim-airline/vim-airline'
 Plug 'justinmk/vim-syntax-extra'
 Plug 'Tetralux/odin.vim'
 Plug 'tbastos/vim-lua'
-Plug 'jdonaldson/vaxe'
 Plug 'ziglang/zig.vim'
 Plug 'tomasiser/vim-code-dark'
 Plug 'chriskempson/base16-vim'
 Plug 'tikhomirov/vim-glsl'
 Plug 'stephpy/vim-yaml'
-Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
-Plug 'junegunn/fzf.vim'
 Plug 'preservim/vim-markdown'
 
 if has('nvim')
   Plug 'nvim-treesitter/nvim-treesitter'
   Plug 'nvim-orgmode/orgmode'
-  Plug 'alec-gibson/nvim-tetris'
   Plug 'nvim-lua/plenary.nvim'
-  Plug 'nvim-telescope/telescope.nvim', { 'tag': '0.1.1' }
+  Plug 'nvim-telescope/telescope.nvim'
+else
+  Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+  Plug 'junegunn/fzf.vim'
 endif
 call plug#end()
 
@@ -64,9 +64,6 @@ set clipboard^=unnamed
 if !has('nvim')
   set ttyfast ttymouse=xterm2 lazyredraw ttyscroll=3 
 endif
-
-" CRITICAL PERFORMANCE FIX: Avoid using 'set autochdir' as it destroys performance.
-" Use manual cd if needed: command! CdCurrent cd %:p:h
 
 " ============================================================================
 " GUI OPTIONS (Disable laggy toolbars/scrollbars)
@@ -156,8 +153,12 @@ nnoremap <leader>q :bp <BAR> :bd #<CR>
 " Tags / Files
 nnoremap <F12> <C-]>
 nnoremap <C-BS> <C-T>
-nnoremap <C-t> :Files<CR>
-nnoremap <C-p> :GFiles<CR>
+
+if has_key(g:plugs, 'telescope.nvim')
+  nnoremap <C-p> <cmd>Telescope git_files<cr>
+elseif has_key(g:plugs, 'fzf.vim')
+  nnoremap <C-p> :GFiles<CR>
+endif
 
 " Font / Path Mappings
 nnoremap <C-=> :call IncrementFontSize()<CR>
@@ -321,6 +322,7 @@ augroup PROJECT_FILETYPES
   au BufRead,BufNewFile *.hlsl.* setfiletype hlsl
   au BufRead,BufNewFile *.glsli* setfiletype glsl
   au BufRead,BufNewFile *.natvis setfiletype xml
+  au BufRead,BufNewFile *.hbc setfiletype gen
   au BufRead,BufNewFile *.bf setfiletype beef | setlocal tabstop=2 noexpandtab
   au BufRead,BufNewFile *.ll :call FnSetLLVMKeyword()
 augroup END
@@ -328,10 +330,8 @@ augroup END
 " ============================================================================
 " COMMAND EXECS
 " ============================================================================
-"command! NT :NERDTreeToggle
-"command! NTT :NERDTree
-command! NT :Fern . -drawer -toggle
-command! NTT :Fern . -drawer
+command! NT :NERDTreeToggle
+command! NTT :NERDTree
 command! Setup :call SetupScript()
 command! PruneDbg :call DoPruneDbg()
 command! PruneDbgMore :call DoPruneDbgMore()
@@ -352,21 +352,9 @@ command! Wiki :e ~/Dropbox/wiki
 command! LoadConf :so ~/.vimrc
 command! Spell :spell spelllang=en_us
 command! PatchSD :call PatchSDProc()
-command! ReloadConf :so ~/.vimrc
+command! ReloadConf :so ~/.vimrc | filetype detect
 command! SaveAsUTF8 :call SaveAsUTF8Function()
 command! -nargs=1 SetFontSize call SetFontSizeProc(<f-args>)
-
-function! s:init_fern() abort
-  nmap <buffer> o <Plug>(fern-action-open-or-expand)
-  nmap <buffer> u <Plug>(fern-action-leave)
-  nmap <buffer> C <Plug>(fern-action-enter)
-  nmap <buffer> R <Plug>(fern-action-reload)
-endfunction
-
-augroup FernNerdTreeHabits
-  autocmd!
-  autocmd FileType fern call s:init_fern()
-augroup END
 
 " ============================================================================
 " NEOVIM ONLY CONFIGS
